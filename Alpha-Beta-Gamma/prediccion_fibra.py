@@ -1,326 +1,278 @@
 import json
+import matplotlib
 import matplotlib.pyplot as plt
-import cv2
 import numpy as np
 import os
-# Ruta al archivo JSON
-ruta_archivo = 'PTV/INFORME_5/CODIGO/fibra_21.json'
 
-# Abrir y leer el archivo JSON
-with open(ruta_archivo, 'r', encoding='utf-8') as archivo:
-    datos = json.load(archivo)
+# =============================================================================
+# 1) GLOBAL STYLE SETTINGS
+# =============================================================================
+# You can adjust these RC parameters to match your paper/journal requirements.
+# e.g. Use Times, a certain font size, etc.
+matplotlib.rcParams.update({
+    "font.family": "serif",
+    "font.size": 14,
+    "axes.labelsize": 16,
+    "axes.titlesize": 16,
+    "legend.fontsize": 12,
+    "xtick.labelsize": 12,
+    "ytick.labelsize": 12,
+    "axes.linewidth": 1.2,       # Border line width
+    "lines.linewidth": 2.0,      # Main line width
+})
 
+# Alternatively, you can pick a style:
+# plt.style.use('seaborn-whitegrid')
 
-centroides = datos['centroide']
-largos = datos['largo_maximo']
-angulos = datos['angulo']
-frame = datos['frame']
+# =============================================================================
+# 2) LOAD DATA
+# =============================================================================
+json_path = 'Alpha-Beta-Gamma/fibra_21.json'
+with open(json_path, 'r', encoding='utf-8') as f:
+    data = json.load(f)
 
-alpha = 0.2
-betha = 0.2
-gamma = 0.2
-
-
-import numpy as np
-import matplotlib.pyplot as plt
-import os
-
-def graficar(centroide_real, largo_real, angulo_real, frame,
-            centroide_prediccion, largo_prediccion, angulo_prediccion,
-            centroide_real_2, largo_real_2, angulo_real_2,
-            tamaño=(1024, 1024), color_real='green',
-            color_prediccion='blue', grosor=3,
-            directorio='PTV/INFORME_5/GRAFICOS/PREDICCIONES',
-            formato='jpg', calidad_jpeg=90):
-
-    
-    ancho, alto = tamaño
-    
-    # Crear el directorio si no existe
-    os.makedirs(directorio, exist_ok=True)
-    
-    # Crear la figura y el eje
-    dpi = 100  # Dots per inch
-    fig, ax = plt.subplots(figsize=(ancho / dpi, alto / dpi), dpi=dpi)
-    
-    # Configurar límites y aspecto
-    ax.set_xlim(0, ancho)
-    ax.set_ylim(0, alto)
-    ax.set_aspect('equal')
-    ax.axis('off')  # Ocultar ejes
-    
-    # Invertir el eje Y para alinear con OpenCV
-    ax.invert_yaxis()
-    
-    # Función interna para calcular coordenadas de la línea
-    def calcular_linea(centroide, largo, angulo):
-        # Convertir el ángulo a radianes
-        angulo_rad = np.deg2rad(angulo)
-
-        # Calcular las diferencias en X e Y basadas en el ángulo
-        delta_x = (largo / 2) * np.cos(angulo_rad)
-        delta_y = (largo / 2) * np.sin(angulo_rad)
-
-        # Calcular los puntos inicial y final de la línea
-        x_inicio = centroide[0] - delta_x
-        y_inicio = centroide[1] - delta_y
-        x_fin = centroide[0] + delta_x
-        y_fin = centroide[1] + delta_y
-
-        return (x_inicio, y_inicio), (x_fin, y_fin)
-
-    
-    # Calcular coordenadas de las líneas
-    inicio_real, fin_real = calcular_linea(centroide_real, largo_real, angulo_real)
-    inicio_prediccion, fin_prediccion = calcular_linea(centroide_prediccion, largo_prediccion, angulo_prediccion)
-    inicio_real_2, fin_real_2 = calcular_linea(centroide_real_2, largo_real_2, angulo_real_2)
-    
-    # Dibujar las líneas
-    ax.plot([inicio_real[0], fin_real[0]], [inicio_real[1], fin_real[1]], color=color_real, linewidth=grosor, label='Real')
-    ax.plot([inicio_prediccion[0], fin_prediccion[0]], [inicio_prediccion[1], fin_prediccion[1]], color=color_prediccion, linewidth=grosor, label='Predicción')
-    ax.plot([inicio_real_2[0], fin_real_2[0]], [inicio_real_2[1], fin_real_2[1]], color='red', linewidth=grosor, label='Real frame prediccion')
-    
-    # Añadir la leyenda
-    ax.legend(loc='upper right', fontsize=10, frameon=True)
-
-    fig.suptitle(f'Parametros {alpha=},{betha=},{gamma=}', fontsize=16, y=0.95)
-    
-    # Ajustar la figura para eliminar espacios
-    plt.subplots_adjust(left=0, right=1, top=1, bottom=0)
-
-    subdirectorio = f'alpha={alpha}-betha={betha}-gamma={gamma}'
-    directorio_completo = os.path.join(directorio, subdirectorio)
-
-    # Crear el subdirectorio si no existe
-    os.makedirs(directorio_completo, exist_ok=True)
-
-    
-    # Definir la ruta de guardado con el formato seleccionado
-    ruta_guardado = os.path.join(directorio_completo, f'imagen_fibra_{frame}.{formato}')
-    
-    # Configurar parámetros de compresión según el formato
-    if formato.lower() in ['jpg', 'jpeg']:
-        params = {'quality': calidad_jpeg, 'optimize': True, 'progressive': True}
-    elif formato.lower() == 'webp':
-        params = {'quality': calidad_jpeg}
-    else:
-        params = {}
-    
-    # Guardar la figura utilizando Matplotlib
-    try:
-        plt.savefig(ruta_guardado, format=formato, bbox_inches='tight', pad_inches=0, **params)
-    except TypeError as e:
-        print(f"Advertencia: {e}. Guardando sin parámetros adicionales.")
-        plt.savefig(ruta_guardado, format=formato, bbox_inches='tight', pad_inches=0)
-    
-    # Cerrar la figura para liberar memoria
-    plt.close(fig)
-    
-    print(f"Imagen guardada en {ruta_guardado}")
-
-
-
-
-
-
-
-
-
-centroides_prediccion = []
-velocidades_prediccion = []
-aceleraciones_prediccion = []
-
-angulo_xy_prediccion = []
-velocidad_angular_xy_prediccion = []
-aceleracion_angular_xy_prediccion = []
+# Position data (x, y)
+centroids = data['centroide']
+# Angles in degrees
+angles_list = data['angulo']
+# Frame indices
+frames = data['frame']
 
 fps = 200
-delta_t = 1/fps
+delta_t = 1.0 / fps
+num_frames = len(centroids)
 
+# =============================================================================
+# 3) REAL DISTANCE, VELOCITY, ANGLE, ANGULAR VELOCITY
+# =============================================================================
 
-for i in range(len(centroides)):
-    
-    if i == 0:
-       
-        #Estoy en la primera deteccion
-        #Por lo tanto no tengo una prediccion, solo tomo los valores reales
+# 3.1) Distance from bottom-left (0,0)
+real_distance = np.zeros(num_frames)
+for i in range(num_frames):
+    x, y = centroids[i]
+    real_distance[i] = np.sqrt(x**2 + y**2)
 
-        
-        x_0 = centroides[i][0]
-        y_0 = centroides[i][1]
-        v_x_0 = 0
-        v_y_0 = 0
-        a_x_0 = 0
-        a_y_0 = 0
-        angulo_0 = angulos[i][0]
-        v_angular_xy_0 = 0
-        a_angular_xy_0 = 0
-        largo_0 = largos[i][0]
-    
+# 3.2) Velocity magnitude
+real_velocity = []
+for i in range(num_frames - 1):
+    dx = centroids[i+1][0] - centroids[i][0]
+    dy = centroids[i+1][1] - centroids[i][1]
+    vx = dx / delta_t
+    vy = dy / delta_t
+    real_velocity.append([vx, vy])
+real_velocity = np.array(real_velocity)
+real_vel_mag = np.sqrt(real_velocity[:, 0]**2 + real_velocity[:, 1]**2)
+frames_vel = frames[1:]
 
-        #Ahora si debo generar una prediccion
-        x_1 = (x_0) + (v_x_0*delta_t) + (0.5 * a_x_0 * delta_t**2)
-        y_1 = (y_0) + (v_y_0*delta_t) + (0.5 * a_y_0 * delta_t**2)
-        centroides_prediccion.append([x_1, y_1])
+# 3.3) Angles (degrees)
+real_angle = np.array([item[0] for item in angles_list])
 
-        v_x_1 = v_x_0 + (a_x_0 * delta_t)
-        v_y_1 = v_y_0 + (a_y_0 * delta_t)
-        velocidades_prediccion.append([v_x_1, v_y_1])
+# 3.4) Angular velocity
+real_ang_velocity = []
+for i in range(num_frames - 1):
+    da = real_angle[i+1] - real_angle[i]
+    w = da / delta_t
+    real_ang_velocity.append(w)
+real_ang_velocity = np.array(real_ang_velocity)
+frames_ang_vel = frames[1:]
 
-        a_x_1 = a_x_0
-        a_y_1 = a_y_0
-        aceleraciones_prediccion.append([a_x_1, a_y_1])
+# =============================================================================
+# 4) ALPHA-BETA-GAMMA FILTER
+# =============================================================================
+def alpha_beta_gamma_filter(centroids, angles_deg, alpha, beta, gamma, dt):
+    """
+    Applies Alpha-Beta-Gamma filtering to (x, y) position and angle (in degrees).
+    Returns:
+        pred_positions  (N, 2): (x, y) for each frame
+        pred_velocities (N, 2): (vx, vy) for each frame
+        pred_angles     (N, ):  angle in degrees for each frame
+        pred_angvel     (N, ):  angular velocity (deg/s) for each frame
+    """
+    n = len(centroids)
 
-        angulo_1 = angulo_0 + v_angular_xy_0 * delta_t + 0.5 * a_angular_xy_0 * delta_t**2
-        angulo_xy_prediccion.append(angulo_1)
+    pred_positions = np.zeros((n, 2), dtype=float)
+    pred_velocities = np.zeros((n, 2), dtype=float)
+    pred_angles = np.zeros(n, dtype=float)
+    pred_angvel = np.zeros(n, dtype=float)
 
-        velocidad_angular_xy_1 = v_angular_xy_0 + a_angular_xy_0 * delta_t
-        velocidad_angular_xy_prediccion.append(velocidad_angular_xy_1)
+    # Initial states
+    x_est = centroids[0][0]
+    y_est = centroids[0][1]
+    vx_est = 0.0
+    vy_est = 0.0
+    ax_est = 0.0
+    ay_est = 0.0
 
-        aceleracion_angular_xy_1 = a_angular_xy_0
-        aceleracion_angular_xy_prediccion.append(aceleracion_angular_xy_1)
-        
+    ang_est = angles_deg[0]
+    w_est = 0.0
+    alpha_est = 0.0  # 'angular acceleration' for the filter
 
-    else:
+    # Store the initial guess
+    pred_positions[0] = [x_est, y_est]
+    pred_velocities[0] = [vx_est, vy_est]
+    pred_angles[0] = ang_est
+    pred_angvel[0] = w_est
 
-        #Ahora detecto una fibra segun la prediccion anterior
-        z_x = centroides[i][0]
-        z_y = centroides[i][1]
-        z_angulo = angulos[i][0]
-        z_largo = largos[i][0]
+    for i in range(1, n):
+        # Current measurements
+        z_x = centroids[i][0]
+        z_y = centroids[i][1]
+        z_ang = angles_deg[i]
 
-        #Genero mis ecuaciones de estado
+        # --- Correction (Alpha, Beta, Gamma) for position ---
+        x_est = x_est + alpha * (z_x - x_est)
+        y_est = y_est + alpha * (z_y - y_est)
+        vx_est = vx_est + beta * ((z_x - x_est) / dt)
+        vy_est = vy_est + beta * ((z_y - y_est) / dt)
+        ax_est = ax_est + gamma * ((z_x - x_est) / (2 * dt**2))
+        ay_est = ay_est + gamma * ((z_y - y_est) / (2 * dt**2))
 
-        x_1 = x_1 + alpha * (z_x - x_1)
-        y_1 = y_1 + alpha * (z_y - y_1)
+        # --- Correction for angle ---
+        ang_est = ang_est + alpha * (z_ang - ang_est)
+        w_est = w_est + beta * ((z_ang - ang_est) / dt)
+        alpha_est = alpha_est + gamma * ((z_ang - ang_est) / (2 * dt**2))
 
-        v_x_1 = v_x_1 + betha * ((z_x - x_1)/delta_t)
-        v_y_1 = v_y_1 + betha * ((z_y - y_1)/delta_t)
+        # --- Prediction step (Alpha-Beta-Gamma logic) ---
+        x_pred = x_est + vx_est * dt + 0.5 * ax_est * (dt**2)
+        y_pred = y_est + vy_est * dt + 0.5 * ay_est * (dt**2)
+        vx_pred = vx_est + ax_est * dt
+        vy_pred = vy_est + ay_est * dt
 
-        a_x_1 = a_x_1 + gamma * ((z_x - x_1)/2*delta_t**2)
-        a_y_1 = a_y_1 + gamma * ((z_y - y_1)/2*delta_t**2)
+        ang_pred = ang_est + w_est * dt + 0.5 * alpha_est * (dt**2)
+        w_pred = w_est + alpha_est * dt
 
-        angulo_1 = angulo_1 + alpha * (z_angulo - angulo_1)
+        # Update states
+        x_est, y_est = x_pred, y_pred
+        vx_est, vy_est = vx_pred, vy_pred
+        ang_est, w_est = ang_pred, w_pred
 
-        velocidad_angular_xy_1 = velocidad_angular_xy_1 + betha * ((z_angulo - angulo_1)/delta_t)
+        # Store predictions
+        pred_positions[i] = [x_est, y_est]
+        pred_velocities[i] = [vx_est, vy_est]
+        pred_angles[i] = ang_est
+        pred_angvel[i] = w_est
 
-        aceleracion_angular_xy_1 = aceleracion_angular_xy_1 + gamma * ((z_angulo - angulo_1)/2*delta_t**2)
+    return pred_positions, pred_velocities, pred_angles, pred_angvel
 
-        #Ahora genero la prediccion
+# =============================================================================
+# 5) PARAMETER COMBINATIONS
+# =============================================================================
+param_combos = [
+    (0.2, 0.2, 0.02),
+    (0.5, 0.5, 0.05),
+    (0.8, 0.8, 0.08)
+]
 
-        x_2 = x_1 + v_x_1 * delta_t + 0.5 * a_x_1 * delta_t**2
-        y_2 = y_1 + v_y_1 * delta_t + 0.5 * a_y_1 * delta_t**2
+# Dictionary for predictions
+pred_results = {}
 
-        v_x_2 = v_x_1 + a_x_1 * delta_t
-        v_y_2 = v_y_1 + a_y_1 * delta_t
+# =============================================================================
+# 6) COMPUTE PREDICTIONS
+# =============================================================================
+for (alpha, beta, gamma) in param_combos:
+    ppos, pvel, pang, pangvel = alpha_beta_gamma_filter(
+        centroids, real_angle, alpha, beta, gamma, delta_t
+    )
 
-        a_x_2 = a_x_1
-        a_y_2 = a_y_1
+    # Distance from (0,0)
+    dist_pred = np.sqrt(ppos[:, 0]**2 + ppos[:, 1]**2)
+    # Velocity magnitude (align frames[1..])
+    vel_mag_all = np.sqrt(pvel[:, 0]**2 + pvel[:, 1]**2)
+    vel_mag_aligned = vel_mag_all[1:]
+    # Angle
+    ang_all = pang
+    # Angular velocity (align frames[1..])
+    angvel_all = pangvel[1:]
 
-        angulo_2 = angulo_1 + velocidad_angular_xy_1 * delta_t + 0.5 * aceleracion_angular_xy_1 * delta_t**2
-        
-        velocidad_angular_xy_2 = velocidad_angular_xy_1 + aceleracion_angular_xy_1 * delta_t
+    pred_results[(alpha, beta, gamma)] = {
+        'distance': dist_pred,
+        'vel_mag': vel_mag_aligned,
+        'angle': ang_all,
+        'angvel': angvel_all
+    }
 
-        aceleracion_angular_xy_2 = aceleracion_angular_xy_1
+# =============================================================================
+# 7) FIGURE 1 -> DISTANCE & VELOCITY
+# =============================================================================
+fig1, axs1 = plt.subplots(2, 1, figsize=(7, 8), sharex=False)
 
-        #Guardo las predicciones
+ax_dist = axs1[0]
+ax_dist.set_title("Distance from (0,0)", pad=10)
+ax_dist.plot(frames, real_distance, color='black', label="Real Distance")
+for (alpha, beta, gamma), vals in pred_results.items():
+    ax_dist.plot(
+        frames, vals['distance'],
+        linestyle='--',
+        label=f"Pred (α={alpha}, β={beta}, γ={gamma})"
+    )
+ax_dist.set_ylabel("Distance [pixels]")
+ax_dist.grid(True)
+ax_dist.legend(loc='best')
+# Remove top/right spines for a cleaner look
+ax_dist.spines['top'].set_visible(False)
+ax_dist.spines['right'].set_visible(False)
 
-        centroides_prediccion.append([x_2, y_2])
-        velocidades_prediccion.append([v_x_2, v_y_2])
-        aceleraciones_prediccion.append([a_x_2, a_y_2])
-        angulo_xy_prediccion.append(angulo_2)
-        velocidad_angular_xy_prediccion.append(velocidad_angular_xy_2)
-        aceleracion_angular_xy_prediccion.append(aceleracion_angular_xy_2)
+ax_vel = axs1[1]
+ax_vel.set_title("Velocity Magnitude", pad=10)
+ax_vel.plot(frames_vel, real_vel_mag, color='black', label="Real Velocity")
+for (alpha, beta, gamma), vals in pred_results.items():
+    ax_vel.plot(
+        frames_vel, vals['vel_mag'],
+        linestyle='--',
+        label=f"Pred (α={alpha}, β={beta}, γ={gamma})"
+    )
+ax_vel.set_xlabel("Frame")
+ax_vel.set_ylabel("Velocity [px/s]")
+ax_vel.grid(True)
+ax_vel.legend(loc='best')
+ax_vel.spines['top'].set_visible(False)
+ax_vel.spines['right'].set_visible(False)
 
-        #Actualizo los valores para la siguiente iteracion
-
-        x_1 = x_2
-        y_1 = y_2
-
-        v_x_1 = v_x_2
-        v_y_1 = v_y_2
-
-        a_x_1 = a_x_2
-        a_y_1 = a_y_2
-
-        angulo_1 = angulo_2
-        
-        velocidad_angular_xy_1 = velocidad_angular_xy_2
-
-        aceleracion_angular_xy_1 = aceleracion_angular_xy_2
-
-
-#Ahora puedo graficar las predicciones
-
-#for i in range(len(centroides)-1):
-    #graficar(centroides[i], largos[i][0], angulos[i][0], frame[i], centroides_prediccion[i+1], largos[i+1][0], angulo_xy_prediccion[i+1], centroides[i+1], largos[i+1][0], angulos[i+1][0])
-
-
-velocidades_ptv = []
-velocidades_prediccion = velocidades_prediccion[1:]
-frame = frame[1:]
-
-for i in range(len(centroides)-1):
-    velocidad_x = ((centroides[i+1][0] - centroides[i][0])/delta_t)
-    velocidad_y = (centroides[i+1][1] - centroides[i][1])/delta_t
-
-    velocidades_ptv.append([velocidad_x, velocidad_y])
-  
-
-# Ahora puedo graficar las diferencias
-# Separar las velocidades en ejes X e Y para real y predicción
-velocidades_ptv = np.array(velocidades_ptv)
-
-velocidad_ptv_x = velocidades_ptv[:, 0]
-velocidad_ptv_y = velocidades_ptv[:, 1]
-
-velocidades_prediccion = np.array(velocidades_prediccion)
-
-velocidad_prediccion_x = velocidades_prediccion[:, 0]
-velocidad_prediccion_y = velocidades_prediccion[:, 1]
-
-# Calcular las diferencias entre real y predicción para ambos ejes
-diferencia_velocidad_x = velocidad_ptv_x - velocidad_prediccion_x
-diferencia_velocidad_y = velocidad_ptv_y - velocidad_prediccion_y
-
-# Crear una figura con tres subplots (uno para X, otro para Y, y otro para las diferencias)
-fig, axs = plt.subplots(2, 1, figsize=(12, 10), sharex=True)
-
-plt.suptitle(f"Velocidades: Real vs Predicción (α={alpha}, β={betha}, γ={gamma})", fontsize=16)
-
-# **Primer Subplot: Velocidad X Real vs Predicción**
-axs[0].plot(frame, velocidad_ptv_x, label="Velocidad Real X", marker='o', linestyle='-', color='blue')
-axs[0].plot(frame, velocidad_prediccion_x, label="Velocidad Predicción X", marker='x', linestyle='--', color='red')
-axs[0].set_title("Velocidades en el eje X")
-axs[0].set_ylabel("Velocidad X (px/s)")
-axs[0].legend()
-axs[0].grid(True)
-
-# **Segundo Subplot: Velocidad Y Real vs Predicción**
-axs[1].plot(frame, velocidad_ptv_y, label="Velocidad Real Y", marker='o', linestyle='-', color='blue')
-axs[1].plot(frame, velocidad_prediccion_y, label="Velocidad Predicción Y", marker='x', linestyle='--', color='red')
-axs[1].set_title("Velocidades en el eje Y")
-axs[1].set_ylabel("Velocidad Y (px/s)")
-axs[1].legend()
-axs[1].grid(True)
-
-
-
-# Ajustar el espacio entre subplots para evitar solapamientos
 plt.tight_layout()
+os.makedirs("Alpha-Beta-Gamma/Graph", exist_ok=True)
+out_fig1 = "Alpha-Beta-Gamma/Graph/distance_velocity_paper.png"
+plt.savefig(out_fig1, dpi=150, bbox_inches='tight')
+plt.show()
+print(f"Saved Figure 1 -> {out_fig1}")
 
+# =============================================================================
+# 8) FIGURE 2 -> ANGLE & ANGULAR VELOCITY
+# =============================================================================
+fig2, axs2 = plt.subplots(2, 1, figsize=(7, 8), sharex=False)
 
+ax_angle = axs2[0]
+ax_angle.set_title("Angle (Degrees)", pad=10)
+ax_angle.plot(frames, real_angle, color='black', label="Real Angle")
+for (alpha, beta, gamma), vals in pred_results.items():
+    ax_angle.plot(
+        frames, vals['angle'],
+        linestyle='--',
+        label=f"Pred (α={alpha}, β={beta}, γ={gamma})"
+    )
+ax_angle.set_ylabel("Angle [deg]")
+ax_angle.grid(True)
+ax_angle.legend(loc='best')
+ax_angle.spines['top'].set_visible(False)
+ax_angle.spines['right'].set_visible(False)
 
-# Definir la ruta de guardado
-#ruta_guardado = os.path.join(directorio_guardado, 'diferencias_velocidad.png')
+ax_angvel = axs2[1]
+ax_angvel.set_title("Angular Velocity (Degrees/s)", pad=10)
+ax_angvel.plot(frames_ang_vel, real_ang_velocity, color='black', label="Real Ang Vel")
+for (alpha, beta, gamma), vals in pred_results.items():
+    ax_angvel.plot(
+        frames_ang_vel, vals['angvel'],
+        linestyle='--',
+        label=f"Pred (α={alpha}, β={beta}, γ={gamma})"
+    )
+ax_angvel.set_xlabel("Frame")
+ax_angvel.set_ylabel("Ang. Velocity [deg/s]")
+ax_angvel.grid(True)
+ax_angvel.legend(loc='best')
+ax_angvel.spines['top'].set_visible(False)
+ax_angvel.spines['right'].set_visible(False)
 
-# Guardar la figura sin bordes ni márgenes adicionales
-plt.savefig(f'PTV/INFORME_5/INFORME/GRAFICOS/VELOCIDADES/alpha_{alpha}_betha_{betha}_gamma_{gamma}.png', bbox_inches='tight', pad_inches=0.1)
-
-# Mostrar la figura (opcional)
-#plt.show()
-
-# Cerrar la figura para liberar memoria
-#plt.close(fig)
-
-#print(f"Gráfica guardada en {ruta_guardado}")
+plt.tight_layout()
+out_fig2 = "Alpha-Beta-Gamma/Graph/angle_angvel_paper.png"
+plt.savefig(out_fig2, dpi=150, bbox_inches='tight')
+plt.show()
+print(f"Saved Figure 2 -> {out_fig2}")
