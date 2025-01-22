@@ -25,18 +25,18 @@ matplotlib.rcParams.update({
 # plt.style.use('seaborn-whitegrid')
 
 # =============================================================================
-# 2) LOAD DATA
+# 2) LOAD DATA (Modificación: Limitar Frames)
 # =============================================================================
 json_path = 'Alpha-Beta-Gamma/fibra_21.json'
+max_frames_to_process = 100  # Límite de frames a procesar
+
 with open(json_path, 'r', encoding='utf-8') as f:
     data = json.load(f)
 
-# Position data (x, y)
-centroids = data['centroide']
-# Angles in degrees
-angles_list = data['angulo']
-# Frame indices
-frames = data['frame']
+# Limitar los datos al número máximo de frames
+centroids = data['centroide'][:max_frames_to_process]
+angles_list = data['angulo'][:max_frames_to_process]
+frames = data['frame'][:max_frames_to_process]
 
 fps = 200
 delta_t = 1.0 / fps
@@ -155,7 +155,7 @@ def alpha_beta_gamma_filter(centroids, angles_deg, alpha, beta, gamma, dt):
     return pred_positions, pred_velocities, pred_angles, pred_angvel
 
 # =============================================================================
-# 5) PARAMETER COMBINATIONS
+# 5) PARAMETER COMBINATIONS & COMPUTE PREDICTIONS
 # =============================================================================
 param_combos = [
     (0.2, 0.2, 0.02),
@@ -163,8 +163,28 @@ param_combos = [
     (0.8, 0.8, 0.08)
 ]
 
-# Dictionary for predictions
 pred_results = {}
+for (alpha, beta, gamma) in param_combos:
+    ppos, pvel, pang, pangvel = alpha_beta_gamma_filter(
+        centroids, real_angle, alpha, beta, gamma, delta_t
+    )
+
+    dist_pred = np.sqrt(ppos[:, 0]**2 + ppos[:, 1]**2)
+    vel_mag_all = np.sqrt(pvel[:, 0]**2 + pvel[:, 1]**2)
+    vel_mag_aligned = vel_mag_all[1:]
+
+    pred_results[(alpha, beta, gamma)] = {
+        'distance': dist_pred,
+        'vel_mag': vel_mag_aligned,
+        'angle': pang,
+        'angvel': pangvel[1:]
+    }
+
+# =============================================================================
+# GRÁFICAS (SE LIMITAN A LOS FRAMES)
+# =============================================================================
+# Las gráficas permanecen igual, usando `frames`, `real_distance`, y `pred_results`.
+
 
 # =============================================================================
 # 6) COMPUTE PREDICTIONS

@@ -4,7 +4,7 @@ from collections import defaultdict
 
 #### 1) Procesar CSV de SAM ####
 # Archivo que contiene las métricas de SAM:
-csv_file_sam = "Segmentation-Models\Training-Results\sam2_losses.csv"
+csv_file_sam = "Segmentation-Models/Training-Results/sam2_losses.csv"
 
 # Usamos diccionarios para acumular la suma y el conteo de 'avg_loss' por época.
 sam_epoch_sums = defaultdict(float)
@@ -25,7 +25,7 @@ sam_avg_losses = [sam_epoch_sums[e] / sam_epoch_counts[e] for e in sam_epochs]
 
 #### 2) Procesar CSV de YOLO ####
 # Archivo que contiene las métricas de YOLO:
-csv_file_yolo = "Segmentation-Models\Training-Results\yolo.csv"
+csv_file_yolo = "Segmentation-Models/Training-Results/yolo.csv"
 
 # Queremos agrupar por época y calcular para cada época la suma de
 # train/box_loss + train/seg_loss + train/cls_loss + train/dfl_loss.
@@ -70,4 +70,4 @@ plt.ylabel("Valor de Loss")
 plt.title("Comparación de Curvas de Loss: SAM vs YOLO")
 plt.legend()
 plt.grid(True)
-plt.show()
+plt.savefig("Segmentation-Models/Training-Results/loss_graph.png")
