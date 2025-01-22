@@ -1,6 +1,7 @@
 import json
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.colors import TwoSlopeNorm
 
 # =============================================================================
 # 1) LOAD DATA FROM JSON
@@ -13,7 +14,7 @@ with open(json_file, "r", encoding="utf-8") as f:
     data = json.load(f)
 
 # =============================================================================
-# 2) EXTRACT DATA FOR HEATMAPS
+# 2) EXTRACT DATA FOR AVERAGE VELOCITIES
 # =============================================================================
 # Initialize lists to store data
 centroid_x = []
@@ -32,7 +33,7 @@ for fiber_id, fiber_data in data.items():
         vx_smooth = fiber_data.get("velocidad_x_convolucionada", [])
         vy_smooth = fiber_data.get("velocidad_y_convolucionada", [])
 
-        # Append data for plotting
+        # Append data for averaging
         centroid_x.extend(x[:len(vx_smooth)])
         centroid_y.extend(y[:len(vy_smooth)])
         vel_x.extend(vx_smooth)
@@ -45,60 +46,69 @@ vel_x = np.array(vel_x)
 vel_y = np.array(vel_y)
 
 # =============================================================================
-# 3) CREATE HEATMAPS
+# 3) CALCULATE AVERAGE VELOCITIES PER GRID CELL
 # =============================================================================
 # Define the grid size for the heatmap
 grid_size = 50
 
-# Create a 2D histogram for velocity in X
-heatmap_x, x_edges, y_edges = np.histogram2d(
-    centroid_x, centroid_y, bins=grid_size, weights=vel_x, density=False
+# Create 2D histograms for summing velocities and counting fibers
+sum_vel_x, x_edges, y_edges = np.histogram2d(
+    centroid_x, centroid_y, bins=grid_size, weights=vel_x
 )
-counts_x, _, _ = np.histogram2d(centroid_x, centroid_y, bins=grid_size)
-heatmap_x /= np.maximum(counts_x, 1)  # Avoid division by zero
+sum_vel_y, _, _ = np.histogram2d(
+    centroid_x, centroid_y, bins=grid_size, weights=vel_y
+)
+counts, _, _ = np.histogram2d(centroid_x, centroid_y, bins=grid_size)
 
-# Create a 2D histogram for velocity in Y
-heatmap_y, _, _ = np.histogram2d(
-    centroid_x, centroid_y, bins=grid_size, weights=vel_y, density=False
-)
-counts_y, _, _ = np.histogram2d(centroid_x, centroid_y, bins=grid_size)
-heatmap_y /= np.maximum(counts_y, 1)  # Avoid division by zero
+# Avoid division by zero: calculate average velocities
+avg_vel_x = np.divide(sum_vel_x, counts, out=np.zeros_like(sum_vel_x), where=counts > 0)
+avg_vel_y = np.divide(sum_vel_y, counts, out=np.zeros_like(sum_vel_y), where=counts > 0)
+
+# Mask cells with no data (counts == 0)
+avg_vel_x = np.ma.masked_where(counts == 0, avg_vel_x)
+avg_vel_y = np.ma.masked_where(counts == 0, avg_vel_y)
 
 # =============================================================================
-# 4) PLOT HEATMAPS
+# 4) PLOT AVERAGE VELOCITY HEATMAPS
 # =============================================================================
-# Plot velocity in X
+# Define the colormap normalization with `TwoSlopeNorm` to center 0 as white
+norm_x = TwoSlopeNorm(vmin=np.min(avg_vel_x), vcenter=0, vmax=np.max(avg_vel_x))
+norm_y = TwoSlopeNorm(vmin=np.min(avg_vel_y), vcenter=0, vmax=np.max(avg_vel_y))
+
+# Plot average velocity in X
 plt.figure(figsize=(10, 8))
 plt.imshow(
-    heatmap_x.T,
-    origin="lower",
+    avg_vel_x.T,
+    origin="upper",  # Ensures (0, 0) is at the top-left
     extent=[x_edges[0], x_edges[-1], y_edges[0], y_edges[-1]],
     aspect="auto",
-    cmap="coolwarm"
+    cmap="coolwarm",
+    norm=norm_x
 )
-plt.colorbar(label="Velocity in X (units/s)")
-plt.title("Heatmap of Velocity in X")
+plt.colorbar(label="Average Velocity in X (units/s)")
+plt.title("Average Velocity in X per Grid Cell")
 plt.xlabel("Centroid X Position")
 plt.ylabel("Centroid Y Position")
 plt.grid(False)
 plt.tight_layout()
-plt.savefig("heatmap_velocity_x.png")
-plt.show()
+plt.savefig("Graphs/Velocity/average_velocity_x.png")
 
-# Plot velocity in Y
+
+# Plot average velocity in Y
 plt.figure(figsize=(10, 8))
 plt.imshow(
-    heatmap_y.T,
-    origin="lower",
+    avg_vel_y.T,
+    origin="upper",  # Ensures (0, 0) is at the top-left
     extent=[x_edges[0], x_edges[-1], y_edges[0], y_edges[-1]],
     aspect="auto",
-    cmap="coolwarm"
+    cmap="coolwarm",
+    norm=norm_y
 )
-plt.colorbar(label="Velocity in Y (units/s)")
-plt.title("Heatmap of Velocity in Y")
+plt.colorbar(label="Average Velocity in Y (units/s)")
+plt.title("Average Velocity in Y per Grid Cell")
 plt.xlabel("Centroid X Position")
 plt.ylabel("Centroid Y Position")
 plt.grid(False)
 plt.tight_layout()
-plt.savefig("heatmap_velocity_y.png")
-plt.show()
+plt.savefig("Graphs/Velocity/average_velocity_y.png")
+
