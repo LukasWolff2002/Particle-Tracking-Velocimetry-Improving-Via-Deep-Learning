@@ -7,7 +7,7 @@ from matplotlib.colors import TwoSlopeNorm
 # 1) LOAD DATA FROM JSON
 # =============================================================================
 # Specify the JSON file path
-json_file = "Graphs/Velocity/fibers_convolutionated.json"  # Replace with your updated JSON file path
+json_file = "Graphs/Linear-Velocity/fibers_convolutionated.json"  # Replace with your updated JSON file path
 
 # Load the JSON data
 with open(json_file, "r", encoding="utf-8") as f:
@@ -46,10 +46,10 @@ vel_x = np.array(vel_x)
 vel_y = np.array(vel_y)
 
 # =============================================================================
-# 3) CALCULATE AVERAGE VELOCITIES PER GRID CELL
+# 3) CALCULATE AVERAGE VELOCITIES PER GRID CELL (REDUCED RESOLUTION)
 # =============================================================================
-# Define the grid size for the heatmap
-grid_size = 50
+# Define the reduced grid size for the heatmap (e.g., 256x256 or 128x128)
+grid_size = (128, 128)
 
 # Create 2D histograms for summing velocities and counting fibers
 sum_vel_x, x_edges, y_edges = np.histogram2d(
@@ -80,35 +80,35 @@ plt.figure(figsize=(10, 8))
 plt.imshow(
     avg_vel_x.T,
     origin="upper",  # Ensures (0, 0) is at the top-left
-    extent=[x_edges[0], x_edges[-1], y_edges[0], y_edges[-1]],
+    extent=[0, 1024, 0, 1024],  # Keep the extent for 1024x1024 images
     aspect="auto",
     cmap="coolwarm",
     norm=norm_x
 )
 plt.colorbar(label="Average Velocity in X (units/s)")
-plt.title("Average Velocity in X per Grid Cell")
+plt.title("Average Velocity in X (Reduced Grid Resolution)")
 plt.xlabel("Centroid X Position")
 plt.ylabel("Centroid Y Position")
 plt.grid(False)
 plt.tight_layout()
-plt.savefig("Graphs/Velocity/average_velocity_x.png")
-
+plt.savefig("Graphs/Linear-Velocity/average_velocity_x.png")
+plt.show()
 
 # Plot average velocity in Y
 plt.figure(figsize=(10, 8))
 plt.imshow(
     avg_vel_y.T,
     origin="upper",  # Ensures (0, 0) is at the top-left
-    extent=[x_edges[0], x_edges[-1], y_edges[0], y_edges[-1]],
+    extent=[0, 1024, 0, 1024],  # Keep the extent for 1024x1024 images
     aspect="auto",
     cmap="coolwarm",
     norm=norm_y
 )
 plt.colorbar(label="Average Velocity in Y (units/s)")
-plt.title("Average Velocity in Y per Grid Cell")
+plt.title("Average Velocity in Y (Reduced Grid Resolution)")
 plt.xlabel("Centroid X Position")
 plt.ylabel("Centroid Y Position")
 plt.grid(False)
 plt.tight_layout()
-plt.savefig("Graphs/Velocity/average_velocity_y.png")
-
+plt.savefig("Graphs/Linear-Velocity/average_velocity_y.png")
+plt.show()
