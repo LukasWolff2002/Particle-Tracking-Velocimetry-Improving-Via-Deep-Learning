@@ -7,7 +7,7 @@ from matplotlib.colors import TwoSlopeNorm
 concentracion_fibras_list = ["25", "50", "100", "200", "400", "800"]
 
 # Definimos un tamaño de grilla para la generación de los mapas de calor
-GRID_SIZE = (128, 128)  # Ajustar a conveniencia
+GRID_SIZE = (200, 200)  # Ajustar a conveniencia
 # Extensión de la imagen (asumiendo que las coordenadas van de 0 a 1024)
 # para que en el plot se muestre de [0, 1024] en X y [0, 1024] en Y.
 EXTENT = [0, 1024, 0, 1024]
@@ -22,7 +22,7 @@ def plot_linear_velocity(concentracion_fibras):
     # 1) Carga de datos
     # ----------------------------------------------------------------------------
     # Ajusta la ruta si tu archivo se llama de otra forma o está en otra carpeta
-    json_file_linear = f"Graphs/Linear-Velocity/fibers_{concentracion_fibras}_convolutionated.json"
+    json_file_linear = f"Graphs/Velocities/fibers_{concentracion_fibras}_convolutionated.json"
     
     with open(json_file_linear, "r", encoding="utf-8") as f:
         data_linear = json.load(f)
@@ -140,7 +140,7 @@ def plot_angular_velocity(concentracion_fibras):
     # 1) Carga de datos
     # ----------------------------------------------------------------------------
     # Ajusta la ruta si tu archivo se llama de otra forma o está en otra carpeta
-    json_file_angular = f"Graphs/Angular-Velocity/fibers_{concentracion_fibras}_convolutionated.json"
+    json_file_angular = f"Graphs/Velocities/fibers_{concentracion_fibras}_convolutionated.json"
 
     with open(json_file_angular, "r", encoding="utf-8") as f:
         data_angular = json.load(f)
