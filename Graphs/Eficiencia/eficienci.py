@@ -1,18 +1,18 @@
 import json
 import matplotlib.pyplot as plt
+import os
 
-# Cambia esta variable si deseas usarla en otra parte del código
+# Lista de concentraciones a comparar
+concentraciones = ["25", "50", "100", "200", "400", "800"]
 
-
-numero_fibras = "800"
-
-archivo_fibras_filtrado = f"Particle-Tracking-Velocimetry\\YOLO\\fibras_{numero_fibras}_filtrado.json"
-
+# Directorio base donde estén los JSON filtrados
+# Ajusta esta variable a tu estructura de carpetas si es necesario.
+base_dir = "Particle-Tracking-Velocimetry\\YOLO"
 
 def compute_fibers_tracked_by_frame(datos):
     """
     Dado un diccionario (contenido de un JSON filtrado),
-    retorna (frames_eje_x, fibras_acumuladas_eje_y), donde:
+    retorna (frames_eje_x, fibras_acumuladas_eje_y).
       - frames_eje_x = [1, 2, ..., max_frame_en_datos]
       - fibras_acumuladas_eje_y[i] = cuántas fibras han aparecido
         en frame <= frames_eje_x[i].
@@ -46,61 +46,70 @@ def compute_fibers_tracked_by_frame(datos):
 
     return frames_eje_x, fibras_acumuladas_eje_y
 
+def get_normalized_curves(concentracion, total_fibras):
+    """
+    Carga el archivo filtrado para 'concentracion'.
+    Retorna dos curvas (x_filt, y_filt_norm) y (x_real, y_real_norm),
+    donde ambas están normalizadas dividiendo por 'total_fibras'.
+    Si 'fibras_por_frame' no existe en el JSON, la curva real será vacía.
+    """
+    archivo_fibras_filtrado = os.path.join(base_dir, f"fibras_{concentracion}_filtrado.json")
 
-def plot_filtrado_vs_real(datos_filtrado):
-    """
-    Genera una gráfica con:
-      1) Fibras trackeadas acumuladas (JSON filtrado).
-      2) Fibras reales por frame (si se encuentra 'fibras_por_frame').
-    Anota el valor máximo de cada curva en el gráfico.
-    """
-    # --- Curva: JSON filtrado (fibras trackeadas acumuladas)
+    with open(archivo_fibras_filtrado, "r", encoding="utf-8") as f:
+        datos_filtrado = json.load(f)
+
+    # Curva filtrada (trackeadas acumuladas, normalizadas)
     x_filt, y_filt = compute_fibers_tracked_by_frame(datos_filtrado)
+    y_filt_norm = [val / total_fibras for val in y_filt]
 
-    # --- Curva: "fibras_por_frame" real (por frame)
-    x_real, y_real = [], []
+    # Curva real (por frame, normalizada)
+    x_real, y_real_norm = [], []
     if "fibras_por_frame" in datos_filtrado:
         lista_real = datos_filtrado["fibras_por_frame"]
         x_real = list(range(1, len(lista_real) + 1))
-        y_real = lista_real
+        y_real_norm = [val / total_fibras for val in lista_real]
 
-    plt.figure(figsize=(8, 5))
+    return x_filt, y_filt_norm, x_real, y_real_norm
 
-    # 1) Trackeadas (filtrado)
-    plt.plot(x_filt, y_filt, color='red', label='Trackeadas (filtrado)')
-    if y_filt:
-        max_val_filt = max(y_filt)
-        idx_filt = y_filt.index(max_val_filt)
-        x_pos_filt = x_filt[idx_filt]
-        plt.text(x_pos_filt, max_val_filt,
-                 f"max={max_val_filt}",
-                 color='red', ha='left', va='bottom', fontsize=9)
+# =============================================================================
+# GRAFICAR TODAS LAS CURVAS (TRACK Y REAL) EN UN SOLO GRÁFICO
+# =============================================================================
 
-    # 2) Fibras reales por frame
-    if x_real and y_real:  # Solo si existe la lista
-        plt.plot(x_real, y_real, color='green', label='Fibras reales por frame')
-        max_val_real = max(y_real)
-        idx_real = y_real.index(max_val_real)
-        x_pos_real = x_real[idx_real]
-        plt.text(x_pos_real, max_val_real,
-                 f"max={max_val_real}",
-                 color='green', ha='left', va='bottom', fontsize=9)
+plt.figure(figsize=(10, 6))
 
-    # Escala logarítmica en el eje Y (opcional)
-    plt.yscale('log')
+# Para asignar un color distinto a cada concentración
+color_cycle = plt.cm.get_cmap("tab10", len(concentraciones))
+# (La mayoría de colormaps admiten hasta 10 colores distintos, "tab10" es común.
+#  Si tienes más de 10 concentraciones, cambiar a un colormap que soporte más colores.)
 
-    plt.title('Comparación de fibras trackeadas (filtrado) y reales')
-    plt.xlabel('Frame')
-    plt.ylabel('Cantidad de fibras')
-    plt.grid(True)
-    plt.legend()
-    plt.show()
+for i, conc in enumerate(concentraciones):
+    # Convertir a entero si el número de fibras en 'conc' representa la cantidad real
+    # o ajustarlo si quieres un valor fijo. Supongamos que 'conc' = "800" => 800
+    total_fibras = int(conc)
 
+    # Obtenemos las curvas normalizadas
+    x_filt, y_filt_norm, x_real, y_real_norm = get_normalized_curves(conc, total_fibras)
 
-if __name__ == "__main__":
-    # Carga del JSON filtrado
-    with open(archivo_fibras_filtrado, "r", encoding="utf-8") as f:
-        datos_filt = json.load(f)
+    color = color_cycle(i)  # color distinto para cada concentración
 
-    # Generar la gráfica comparativa (con anotación de los máximos)
-    plot_filtrado_vs_real(datos_filt)
+    # Curva de trackeadas
+    plt.plot(x_filt, y_filt_norm, color=color,
+             label=f"Track (filtrado) - {conc}")
+
+    # Curva de reales (si existe)
+    if x_real and y_real_norm:
+        plt.plot(x_real, y_real_norm, "--", color=color,
+                 label=f"Real - {conc}")  # guión discont. p/distinción
+
+# Escala logarítmica en el eje Y (opcional)
+plt.yscale('log')
+
+plt.title("Comparación Normalizada de Fibras Trackeadas (filtrado) vs. Reales\n"
+          "Todas las concentraciones en un mismo gráfico")
+plt.xlabel("Frame")
+plt.ylabel("Fracción de fibras (valor / total_fibras)")
+plt.grid(True)
+plt.legend(loc="best")
+plt.tight_layout()
+
+plt.show()

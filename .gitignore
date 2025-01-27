@@ -1,4 +1,5 @@
 Particle-Tracking-Velocimetry/Dataset/
 Particle-Tracking-Velocimetry/YOLO/runs/
-
+Particle-Tracking-Velocimetry/YOLO/.ipynb_checkpoints/
+Particle-Tracking-Velocimetry/YOLO/Yolo-Model/best.pt
 *json
