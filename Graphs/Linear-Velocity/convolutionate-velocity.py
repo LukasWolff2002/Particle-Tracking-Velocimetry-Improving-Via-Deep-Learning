@@ -5,7 +5,8 @@ import numpy as np
 # 1) LOAD DATA FROM JSON
 # =============================================================================
 # Specify the JSON file path
-json_file = "Graphs/Linear-Velocity/fibras_filtradas.json"  # Replace with your actual JSON file path
+concentracion_fibras = "50"
+json_file = f"Particle-Tracking-Velocimetry\\YOLO\\fibras_{concentracion_fibras}_filtrado.json"  # Replace with your actual JSON file path
 
 # Load the JSON data
 with open(json_file, "r", encoding="utf-8") as f:
@@ -63,7 +64,7 @@ for fiber_id, fiber_data in data.items():
 # 4) SAVE THE UPDATED JSON
 # =============================================================================
 # Specify the output JSON file path
-output_file = "Graphs/Linear-Velocity/fibers_convolutionated.json"  # Replace with your desired output file name
+output_file = f"Graphs/Linear-Velocity/fibers_{concentracion_fibras}_convolutionated.json"  # Replace with your desired output file name
 
 # Save the updated data to a new JSON file
 with open(output_file, "w", encoding="utf-8") as f:

@@ -7,7 +7,9 @@ from matplotlib.colors import TwoSlopeNorm
 # 1) LOAD DATA FROM JSON
 # =============================================================================
 # Specify the JSON file path
-json_file = "Graphs/Linear-Velocity/fibers_convolutionated.json"  # Replace with your updated JSON file path
+
+concentracion_fibras = "50"
+json_file = f"Graphs/Linear-Velocity/fibers_{concentracion_fibras}_convolutionated.json"  # Replace with your updated JSON file path
 
 # Load the JSON data
 with open(json_file, "r", encoding="utf-8") as f:
