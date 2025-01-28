@@ -1,5 +1,8 @@
 Particle-Tracking-Velocimetry/Dataset/
 Particle-Tracking-Velocimetry/YOLO/runs/
+Particle-Tracking-Velocimetry/Hough-Transform/runs/
 Particle-Tracking-Velocimetry/YOLO/.ipynb_checkpoints/
-Particle-Tracking-Velocimetry/YOLO/Yolo-Model/best.pt
+Segmentation-Models/YOLO/
+Segmentation-Models/SAM/
+*pt
 *json
